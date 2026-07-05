@@ -9,6 +9,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +40,9 @@ public class ExcelService {
                             row.getCell(7).getStringCellValue(),
                             (int) row.getCell(8).getNumericCellValue(),
                             row.getCell(9).getStringCellValue(),
-                            row.getCell(10).getLocalDateTimeCellValue().toLocalDate(),
+                            LocalDate.parse(
+                                    row.getCell(10).getStringCellValue()
+                            ),
                             row.getCell(11).getStringCellValue(),
                             row.getCell(12).getNumericCellValue(),
                             row.getCell(13).getStringCellValue()
