@@ -7,6 +7,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -89,8 +90,13 @@ public class RAGService {
 
     public ResponseEntity<String> ask(String question) {
 
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(question)
+                .topK(50)
+                .build();
+
         List<Document> documents =
-                vectorStore.similaritySearch(question);
+                vectorStore.similaritySearch(searchRequest);
 
         String context = documents.stream()
                         .map(Document::getText)
