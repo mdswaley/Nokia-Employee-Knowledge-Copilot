@@ -1,6 +1,6 @@
 package com.nokia.Nokia.Employee.Knowledge.Copilot.Service;
 
-import com.nokia.Nokia.Employee.Knowledge.Copilot.DTO.EmployeeDTO;
+import com.nokia.Nokia.Employee.Knowledge.Copilot.Entity.EmployeeEntity;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -17,9 +17,9 @@ import java.util.List;
 public class ExcelService {
 
 
-        public List<EmployeeDTO> readEmployees(Resource resource) throws IOException {
+        public List<EmployeeEntity> readEmployees(Resource resource) throws IOException {
 
-            List<EmployeeDTO> employees = new ArrayList<>();
+            List<EmployeeEntity> employees = new ArrayList<>();
 
             try (Workbook workbook = new XSSFWorkbook(resource.getInputStream())) {
 
@@ -29,7 +29,7 @@ public class ExcelService {
 
                     Row row = sheet.getRow(i);
 
-                    EmployeeDTO employee = new EmployeeDTO(
+                    EmployeeEntity employee = new EmployeeEntity(
                             row.getCell(0).getStringCellValue(),
                             row.getCell(1).getStringCellValue(),
                             row.getCell(2).getStringCellValue(),

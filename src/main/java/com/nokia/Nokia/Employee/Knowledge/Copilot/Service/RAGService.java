@@ -1,7 +1,9 @@
 package com.nokia.Nokia.Employee.Knowledge.Copilot.Service;
 
-import com.nokia.Nokia.Employee.Knowledge.Copilot.DTO.EmployeeDTO;
+import com.nokia.Nokia.Employee.Knowledge.Copilot.DTO.AskRequest;
+import com.nokia.Nokia.Employee.Knowledge.Copilot.Entity.EmployeeEntity;
 import com.nokia.Nokia.Employee.Knowledge.Copilot.Entity.UploadedFile;
+import com.nokia.Nokia.Employee.Knowledge.Copilot.Repository.EmployeeRepository;
 import com.nokia.Nokia.Employee.Knowledge.Copilot.Repository.UploadedFileRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +35,7 @@ public class RAGService {
     private final VectorStore vectorStore;
     private final ChatMemory chatMemory;
     private final ExcelService excelService;
-    private final EmployeeDTO employeeDTO;
+    private final EmployeeRepository employeeRepository;
     private final UploadedFileRepository uploadedFileRepository;
 
 
@@ -45,7 +47,7 @@ public class RAGService {
         return embeddingModel.embed(text);
     }
 
-    private Document employeeToDocument(EmployeeDTO employee){
+    private Document employeeToDocument(EmployeeEntity employee){
 
         String content = """
             Employee ID: %s
@@ -59,23 +61,23 @@ public class RAGService {
             Certification: %s
             """
                 .formatted(
-                        employee.employeeId(),
-                        employee.name(),
-                        employee.department(),
-                        employee.designation(),
-                        employee.location(),
-                        employee.skills(),
-                        employee.experienceYears(),
-                        employee.manager(),
-                        employee.certification()
+                        employee.getEmployeeId(),
+                        employee.getName(),
+                        employee.getDepartment(),
+                        employee.getDesignation(),
+                        employee.getLocation(),
+                        employee.getSkills(),
+                        employee.getExperienceYears(),
+                        employee.getManager(),
+                        employee.getCertification()
                 );
 
         return new Document(
                 content,
                 Map.of(
-                        "employeeId", employee.employeeId(),
-                        "department", employee.department(),
-                        "location", employee.location()
+                        "employeeId", employee.getEmployeeId(),
+                        "department", employee.getDepartment(),
+                        "location", employee.getLocation()
                 )
         );
     }
@@ -83,6 +85,14 @@ public class RAGService {
     @PostConstruct
     public void loadEmployees() throws Exception {
         String fileName = empData.getFilename();
+
+        List<EmployeeEntity> employees = excelService.readEmployees(empData);
+
+//        save if employee table is empty
+        if (employeeRepository.count() == 0) {
+            employeeRepository.saveAll(employees);
+            System.out.println("Employees saved to database");
+        }
 
         if (uploadedFileRepository.existsByFileName(fileName)) {
 
@@ -93,7 +103,6 @@ public class RAGService {
             return;
         }
 
-        List<EmployeeDTO> employees = excelService.readEmployees(empData);
 
         List<Document> documents = employees.stream()
                         .map(this::employeeToDocument)
@@ -114,10 +123,13 @@ public class RAGService {
     }
 
 
-    public ResponseEntity<String> ask(String question) {
+    public ResponseEntity<String> ask(AskRequest req) {
+        EmployeeEntity employee =
+                employeeRepository.findById(String.valueOf(req.employeeId())).orElseThrow(
+                        ()-> new RuntimeException("Employee not exist with id "+req.employeeId()));
 
         SearchRequest searchRequest = SearchRequest.builder()
-                .query(question)
+                .query(req.question())
                 .topK(50)
                 .build();
 
@@ -143,7 +155,7 @@ public class RAGService {
 
                     Question:
                     %s
-                    """.formatted(context, question))
+                    """.formatted(context, req.question()))
                 .advisors(
                         SafeGuardAdvisor.builder().sensitiveWords(List.of(
                                 "Salary"
@@ -164,16 +176,43 @@ public class RAGService {
 
                 )
                 .advisors(a -> a
-                        .param(ChatMemory.CONVERSATION_ID, employeeDTO.employeeId())
-                        .param("employeeName", employeeDTO.name())
-                        .param("department", employeeDTO.department())
-                        .param("role", employeeDTO.designation()))
+                        .param(ChatMemory.CONVERSATION_ID,
+                                String.valueOf(employee.getEmployeeId()))
+                )
                 .call()
                 .content();
 
         return ResponseEntity.ok(c1);
     }
 
+
+
+    private void saveEmployeeToEmployeeTable(List<EmployeeEntity> employeeDTOs) {
+        List<EmployeeEntity> emp1= employeeDTOs.stream()
+                .map(dto -> {
+                    EmployeeEntity employee = new EmployeeEntity();
+
+                    employee.setEmployeeId(dto.getEmployeeId());
+                    employee.setName(dto.getName());
+                    employee.setEmail(dto.getEmail());
+                    employee.setPhone(dto.getPhone());
+                    employee.setDepartment(dto.getDepartment());
+                    employee.setDesignation(dto.getDesignation());
+                    employee.setLocation(dto.getLocation());
+                    employee.setSkills(dto.getSkills());
+                    employee.setExperienceYears(dto.getExperienceYears());
+                    employee.setManager(dto.getManager());
+                    employee.setJoiningDate(dto.getJoiningDate());
+                    employee.setEmploymentType(dto.getEmploymentType());
+                    employee.setSalary(dto.getSalary());
+                    employee.setCertification(dto.getCertification());
+
+                    return employee;
+                })
+                .toList();
+
+        employeeRepository.saveAll(emp1);
+    }
 
 
 

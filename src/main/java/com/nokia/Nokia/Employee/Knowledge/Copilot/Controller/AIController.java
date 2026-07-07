@@ -1,12 +1,10 @@
 package com.nokia.Nokia.Employee.Knowledge.Copilot.Controller;
 
+import com.nokia.Nokia.Employee.Knowledge.Copilot.DTO.AskRequest;
 import com.nokia.Nokia.Employee.Knowledge.Copilot.Service.RAGService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -14,9 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class AIController {
     private final RAGService ragService;
 
-    @GetMapping("/ask")
-    public ResponseEntity<String> getAsk(@RequestParam String question){
-        return ragService.ask(question);
+    @PostMapping("/ask")
+    public ResponseEntity<String> ask(@RequestBody AskRequest request) {
+        return ragService.ask(request);
     }
 
 }
