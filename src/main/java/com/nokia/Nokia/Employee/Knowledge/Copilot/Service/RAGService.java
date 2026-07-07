@@ -33,6 +33,7 @@ public class RAGService {
     private final VectorStore vectorStore;
     private final ChatMemory chatMemory;
     private final ExcelService excelService;
+    private final EmployeeDTO employeeDTO;
     private final UploadedFileRepository uploadedFileRepository;
 
 
@@ -162,6 +163,11 @@ public class RAGService {
                                 .build()
 
                 )
+                .advisors(a -> a
+                        .param(ChatMemory.CONVERSATION_ID, employeeDTO.employeeId())
+                        .param("employeeName", employeeDTO.name())
+                        .param("department", employeeDTO.department())
+                        .param("role", employeeDTO.designation()))
                 .call()
                 .content();
 
