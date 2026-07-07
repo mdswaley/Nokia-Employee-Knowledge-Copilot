@@ -1,9 +1,15 @@
 package com.nokia.Nokia.Employee.Knowledge.Copilot.Service;
 
 import com.nokia.Nokia.Employee.Knowledge.Copilot.DTO.EmployeeDTO;
+import com.nokia.Nokia.Employee.Knowledge.Copilot.Entity.UploadedFile;
+import com.nokia.Nokia.Employee.Knowledge.Copilot.Repository.UploadedFileRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.SafeGuardAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.VectorStoreChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -14,6 +20,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,6 +33,7 @@ public class RAGService {
     private final VectorStore vectorStore;
     private final ChatMemory chatMemory;
     private final ExcelService excelService;
+    private final UploadedFileRepository uploadedFileRepository;
 
 
     @Value("classpath:Nokia_Employee_Dataset.xlsx")
@@ -73,6 +81,16 @@ public class RAGService {
 
     @PostConstruct
     public void loadEmployees() throws Exception {
+        String fileName = empData.getFilename();
+
+        if (uploadedFileRepository.existsByFileName(fileName)) {
+
+            System.out.println(
+                    fileName + " already processed. Skipping ingestion."
+            );
+
+            return;
+        }
 
         List<EmployeeDTO> employees = excelService.readEmployees(empData);
 
@@ -81,6 +99,13 @@ public class RAGService {
                         .toList();
 
         vectorStore.add(documents);
+
+        uploadedFileRepository.save(
+                UploadedFile.builder()
+                        .fileName(fileName)
+                        .uploadedAt(LocalDateTime.now())
+                        .build()
+        );
 
         System.out.println("Loaded "
                 + documents.size()
@@ -118,6 +143,25 @@ public class RAGService {
                     Question:
                     %s
                     """.formatted(context, question))
+                .advisors(
+                        SafeGuardAdvisor.builder().sensitiveWords(List.of(
+                                "Salary"
+                        )).build(),
+
+                        MessageChatMemoryAdvisor.builder(chatMemory).build(),  // for short term msg storage
+
+                        VectorStoreChatMemoryAdvisor.builder(vectorStore)  // for long term msg storage
+                                .defaultTopK(4)
+                                .build(),
+
+                        QuestionAnswerAdvisor.builder(vectorStore)  // for question and answer purpose from given data source
+                                .searchRequest(SearchRequest.builder()
+                                        .filterExpression("file_name == 'Nokia_Employee_Dataset.xlsx'")
+                                        .topK(4)
+                                        .build())
+                                .build()
+
+                )
                 .call()
                 .content();
 

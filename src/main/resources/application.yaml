@@ -1,6 +1,10 @@
 spring:
   application:
     name: Nokia-Employee-Knowledge-Copilot
+  jpa:
+    hibernate:
+      ddl-auto: update
+
   ai:
     ollama:
       base-url: http://localhost:11434
