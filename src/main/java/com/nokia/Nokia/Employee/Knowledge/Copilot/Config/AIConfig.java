@@ -7,6 +7,11 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+
+import java.time.Duration;
 
 @Configuration
 public class AIConfig {
@@ -25,6 +30,17 @@ public class AIConfig {
                 .builder()
                 .chatMemoryRepository(jdbcChatMemoryRepository)
                 .maxMessages(10)
+                .build();
+    }
+
+    @Bean
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+                        .entryTtl(Duration.ofHours(2));
+
+        return RedisCacheManager.builder(connectionFactory)
+                .cacheDefaults(config)
                 .build();
     }
 
