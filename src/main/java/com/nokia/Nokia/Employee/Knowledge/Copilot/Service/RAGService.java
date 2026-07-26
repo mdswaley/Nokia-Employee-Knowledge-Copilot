@@ -18,6 +18,7 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -123,10 +124,12 @@ public class RAGService {
     }
 
 
-    public ResponseEntity<String> ask(AskRequest req) {
-        EmployeeEntity employee =
-                employeeRepository.findById(String.valueOf(req.employeeId())).orElseThrow(
-                        ()-> new RuntimeException("Employee not exist with id "+req.employeeId()));
+    @Cacheable(value = "ai-response", key = "#req")
+    public String ask(AskRequest req) {
+        EmployeeEntity employee = employeeRepository.findById(
+                String.valueOf(req.employeeId())).orElseThrow(
+                        ()-> new RuntimeException("Employee not exist with id "+req.employeeId())
+        );
 
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(req.question())
@@ -182,7 +185,7 @@ public class RAGService {
                 .call()
                 .content();
 
-        return ResponseEntity.ok(c1);
+        return c1;
     }
 
 
