@@ -42,7 +42,6 @@ public class RAGService {
     @Value("classpath:Nokia_Employee_Dataset.xlsx")
     Resource empData;
 
-
     public float[] getEmbedding(String text){
         return embeddingModel.embed(text);
     }
@@ -102,7 +101,6 @@ public class RAGService {
 
             return;
         }
-
 
         List<Document> documents = employees.stream()
                         .map(this::employeeToDocument)
