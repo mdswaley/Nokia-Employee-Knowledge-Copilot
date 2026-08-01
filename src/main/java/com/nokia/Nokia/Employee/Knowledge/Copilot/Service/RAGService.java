@@ -193,7 +193,6 @@ public class RAGService {
         List<EmployeeEntity> emp1= employeeDTOs.stream()
                 .map(dto -> {
                     EmployeeEntity employee = new EmployeeEntity();
-
                     employee.setEmployeeId(dto.getEmployeeId());
                     employee.setName(dto.getName());
                     employee.setEmail(dto.getEmail());
@@ -208,7 +207,6 @@ public class RAGService {
                     employee.setEmploymentType(dto.getEmploymentType());
                     employee.setSalary(dto.getSalary());
                     employee.setCertification(dto.getCertification());
-
                     return employee;
                 })
                 .toList();
