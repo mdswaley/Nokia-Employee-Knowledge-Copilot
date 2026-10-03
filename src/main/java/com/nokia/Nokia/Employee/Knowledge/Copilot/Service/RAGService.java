@@ -163,9 +163,9 @@ public class RAGService {
 
                         MessageChatMemoryAdvisor.builder(chatMemory).build(),  // for short term msg storage
 
-                        VectorStoreChatMemoryAdvisor.builder(vectorStore)  // for long term msg storage
-                                .defaultTopK(4)
-                                .build(),
+//                        VectorStoreChatMemoryAdvisor.builder(vectorStore)  // for long term msg storage
+//                                .defaultTopK(4)
+//                                .build(),
 
                         QuestionAnswerAdvisor.builder(vectorStore)  // for question and answer purpose from given data source
                                 .searchRequest(SearchRequest.builder()
